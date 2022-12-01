@@ -127,3 +127,27 @@ def loss(policy_dqn:DQN, target_dqn:DQN,
     bellman_targets = (~dones).reshape(-1)*(target_dqn(next_states)).max(1).values + rewards.reshape(-1)
     q_values = policy_dqn(states).gather(1, actions).reshape(-1)
     return ((q_values - bellman_targets)**2).mean()
+
+
+def loss_ddqn(policy_dqn:DQN, target_dqn:DQN,
+         states:torch.Tensor, actions:torch.Tensor,
+         rewards:torch.Tensor, next_states:torch.Tensor, dones:torch.Tensor)->torch.Tensor:
+    """Calculate Bellman error loss
+    
+    Args:
+        policy_dqn: policy DQN
+        target_dqn: target DQN
+        states: batched state tensor
+        actions: batched action tensor
+        rewards: batched rewards tensor
+        next_states: batched next states tensor
+        dones: batched Boolean tensor, True when episode terminates
+    
+    Returns:
+        Float scalar tensor with loss value
+    """
+    action = policy_dqn(next_states).argmax(1).reshape(-1,1)
+    bellman_targets = (~dones).reshape(-1)*(target_dqn(next_states)).gather(1, action).reshape(-1) + rewards.reshape(-1)
+    # bellman_targets = (~dones).reshape(-1)*(target_dqn(next_states)).max(1).values + rewards.reshape(-1)
+    q_values = policy_dqn(states).gather(1, actions).reshape(-1)
+    return ((q_values - bellman_targets)**2).mean()
